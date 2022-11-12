@@ -7,5 +7,5 @@ resources:
   - ingress.yaml
 patches:
   - path: patch-deployment.yaml
-  - path: patch-cluster-role.yaml
+  # - path: patch-cluster-role.yaml
 ...
