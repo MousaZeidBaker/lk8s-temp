@@ -7,9 +7,8 @@ metadata:
 spec:
   interval: 10m0s
   sourceRef:
-    # kind: GitRepository
-    kind: Bucket
-    name: lk8s-bucket
+    kind: GitRepository
+    name: lk8s
   path: ./infrastructure
   prune: true
 ...

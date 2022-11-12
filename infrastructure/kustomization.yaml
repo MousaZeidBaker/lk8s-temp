@@ -5,4 +5,5 @@ resources:
   - ingress-nginx
   - kubernetes-dashboard
   - vault
+  - external-secrets
 ...

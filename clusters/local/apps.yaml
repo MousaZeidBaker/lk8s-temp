@@ -9,9 +9,8 @@ spec:
   dependsOn:
     - name: infrastructure
   sourceRef:
-    # kind: GitRepository
-    kind: Bucket
-    name: lk8s-bucket
+    kind: GitRepository
+    name: lk8s
   path: ./apps
   prune: true
   wait: true
