@@ -1,0 +1,33 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard
+  namespace: kubernetes-dashboard
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/ssl-redirect: false  # force SSL redirect (only port 443)
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      # 301 redirect with trailing slash
+      rewrite ^(/dashboard)$ $scheme://$http_host$1/ permanent;
+
+      # uncomment to force SSL redirect with custom port
+      # if ($scheme = http) { return 308 https://$host:8443$request_uri; }
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - kubernetes.127.0.0.1.nip.io
+  rules:
+    - host: kubernetes.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /dashboard(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: kubernetes-dashboard
+                port:
+                  number: 443
+...

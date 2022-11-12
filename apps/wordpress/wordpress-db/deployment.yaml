@@ -1,0 +1,81 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-db
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-db
+  template:
+    metadata:
+      labels:
+        app: wordpress-db
+    spec:
+      volumes:
+        - name: wordpress-db
+          persistentVolumeClaim:
+            claimName: wordpress-db
+      initContainers:
+        - name: init-change-volume-ownership
+          image: busybox:1.35.0
+          command: ['sh', '-c', 'chown 1001:1001 /volume && ls -la /volume']
+          volumeMounts:
+            - mountPath: /volume
+              name: wordpress-db
+              readOnly: false
+      containers:
+        - name: wordpress-db
+          image: bitnami/mariadb:10.9.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3306
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: wordpress-db
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - mountPath: /bitnami/mariadb
+              name: wordpress-db
+              readOnly: false
+          resources:
+            limits:
+              cpu: 100m
+              memory: 500Mi
+            requests:
+              cpu: 25m
+              memory: 10Mi
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - mysqladmin ping -u${MARIADB_USER} -p${MARIADB_PASSWORD} | grep 'mysqld is alive' || exit 1
+            initialDelaySeconds: 1
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - mysqladmin ping -u${MARIADB_USER} -p${MARIADB_PASSWORD} | grep 'mysqld is alive' || exit 1
+            initialDelaySeconds: 1
+            periodSeconds: 5
+          startupProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - mysqladmin ping -u${MARIADB_USER} -p${MARIADB_PASSWORD} | grep 'mysqld is alive' || exit 1
+            failureThreshold: 5
+            periodSeconds: 5
+...

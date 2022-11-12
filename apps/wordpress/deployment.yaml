@@ -1,0 +1,57 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      volumes:
+        - name: wordpress
+          persistentVolumeClaim:
+            claimName: wordpress
+      initContainers:
+        - name: init-change-volume-ownership
+          image: busybox:1.35.0
+          command: ['sh', '-c', 'chown 1001:1001 /volume && ls -la /volume']
+          volumeMounts:
+            - mountPath: /volume
+              name: wordpress
+              readOnly: false
+      containers:
+        - name: wordpress
+          image: bitnami/wordpress:6.0.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: wordpress
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - mountPath: /bitnami/wordpress
+              name: wordpress
+              readOnly: false
+          resources:
+            limits:
+              cpu: 100m
+              memory: 500Mi
+            requests:
+              cpu: 25m
+              memory: 10Mi
+...

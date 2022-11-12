@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-db
+  namespace: apps
+  labels:
+    app: wordpress-db
+spec:
+  type: ClusterIP
+  selector:
+    app: wordpress-db
+  ports:
+    - name: 3306-tcp
+      protocol: TCP
+      port: 3306
+      targetPort: 3306
+...

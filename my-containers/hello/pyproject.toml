@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "hello"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+
+packages = [
+    { include = "hello", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.75.2"
+uvicorn = "^0.17.6"
+pydantic = "^1.9.0"
+
+[tool.poetry.dev-dependencies]
+black = "^22.3.0"
+isort = "^5.10.1"
+flake8 = "^4.0.1"
+flake8-black = "^0.3.2"
+flake8-isort = "^4.1.1"
+pytest = "^7.1.2"
+requests = "^2.27.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 80
+
+[tool.isort]
+profile = "black"
+line_length = 80

@@ -1,0 +1,10 @@
+---
+version: '2.4'
+services:
+  hello:
+    build: .
+    ports:
+      - 9000:9000
+    environment:
+      - LOG_LEVEL=INFO
+...

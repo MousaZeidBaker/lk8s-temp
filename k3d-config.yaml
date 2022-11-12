@@ -1,0 +1,66 @@
+---
+# ref: https://github.com/k3d-io/k3d-demo/blob/main/assets/k3d-config.yaml
+
+apiVersion: k3d.io/v1alpha4
+kind: Simple
+metadata:
+  name: kube
+servers: 1
+agents: 0
+kubeAPI:
+  hostIP: 127.0.0.1
+  hostPort: '6443'
+image: docker.io/rancher/k3s:v1.23.8-k3s1
+
+volumes:
+  - volume: $PWD/volumes/storage:/var/lib/rancher/k3s/storage
+    nodeFilters:
+      - all
+
+ports:
+  - port: 8080:80
+    nodeFilters:
+      - loadbalancer
+  - port: 0.0.0.0:8443:443
+    nodeFilters:
+      - loadbalancer
+
+registries:
+  create:
+    name: registry.localhost
+    host: 127.0.0.1
+    hostPort: '5000'
+    volumes:
+      - $PWD/volumes/registry:/var/lib/registry
+  # yamllint disable rule:indentation
+  config: |
+    mirrors:
+      registry.localhost:5000:
+        endpoint:
+          - http://registry.localhost:5000
+  # yamllint enable rule:indentation
+
+options:
+  k3d:
+    wait: true
+    timeout: 60s
+    disableLoadbalancer: false
+    disableImageVolume: false
+    disableRollback: false
+
+  k3s:
+    extraArgs:
+      - arg: --no-deploy=traefik
+        nodeFilters:
+          - server:*
+      - arg: --tls-san=127.0.0.1
+        nodeFilters:
+          - server:*
+      - arg: --kube-apiserver-arg=feature-gates=MixedProtocolLBService=true
+        nodeFilters:
+          - server:*
+
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
+...

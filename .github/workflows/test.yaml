@@ -1,0 +1,40 @@
+name: Test
+on:
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Lint
+        run: |
+          pip install yamllint
+          yamllint .
+
+      - name: Start a local Kubernetes cluster
+        run: |
+          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.4.4 bash
+          k3d cluster create --config k3d-config.yaml
+          docker ps
+
+      - name: Deploy apps
+      # yamllint disable rule:line-length
+        run: |
+          find apps -type f -name ".env.example" -exec sh -c 'cp --no-clobber ${1} ${1%/*}/.env' sh_cp {} \;
+          kubectl apply --kustomize infrastructure
+          kubectl wait --for=condition=Available=true --timeout=1m --namespace ingress-nginx deployment/ingress-nginx-controller
+          kubectl apply --kustomize apps
+          echo "Waiting for service endpoints to become active.."
+          sleep 40
+          kubectl get endpoints
+      # yamllint enable rule:line-length
+
+      - name: Test whoami app
+        run: |
+          curl --fail --silent "http://whoami.127.0.0.1.nip.io:8080"
+          curl --fail --silent --insecure "https://whoami.127.0.0.1.nip.io:8443"

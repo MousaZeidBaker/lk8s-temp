@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  vault-server:
+    image: vault:1.12.1
+    ports:
+      - 8200:8200
+    volumes:
+      - ./volumes/storage/vault:/vault
+    environment:
+      # VAULT_SEAL_TYPE: transit
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8200
+      # VAULT_TOKEN: ccf3d715ddd8e662f1415d62562b8096
+      VAULT_DEV_ROOT_TOKEN_ID: ccf3d715ddd8e662f1415d62562b8096
+      VAULT_LOCAL_CONFIG: '{"storage":{"file":{"path":"/vault/file"}}'
+      # VAULT_LOCAL_CONFIG: '{"storage":{"file":{"path":"/vault/file"}},"listener":{"tcp":{"address":"0.0.0.0:8200","tls_disable":true}},"ui":true}'
+    cap_add:
+      - IPC_LOCK
+    command: vault server
+  # vault-client:
+  #   build: .
+  #   environment:
+  #     VAULT_ADDR: http://vault-server:8200
+  # vault-agent:
+  #   image: vault:1.12.1
+  #   ports:
+  #     - 18200:8200
+  #   environment:
+  #     VAULT_ADDR: http://vault-server:8200
+  #   entrypoint: "vault agent"

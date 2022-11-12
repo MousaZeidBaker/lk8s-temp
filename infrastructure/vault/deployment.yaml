@@ -1,0 +1,91 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault
+  template:
+    metadata:
+      labels:
+        app: vault
+    spec:
+      volumes:
+        - name: vault
+          persistentVolumeClaim:
+            claimName: vault
+      initContainers:
+        - name: init-change-volume-ownership
+          image: busybox:1.35.0
+          command: ['sh', '-c', 'chown 1000:1000 /volume && ls -la /volume']
+          volumeMounts:
+            - mountPath: /volume
+              name: vault
+              readOnly: false
+        - name: init-prepare-configuration
+          image: busybox:1.35.0
+          command:
+            - sh
+            - -c
+            - >
+              mkdir -p /vault/config
+              && echo 'disable_mlock = true ui = true listener "tcp" { address = "0.0.0.0:8200" tls_disable = "true" } storage "file" { path = "/vault/file" }' > /vault/config/config.hcl
+              && cat /vault/config/config.hcl
+          volumeMounts:
+            - mountPath: /vault
+              name: vault
+              readOnly: false
+      containers:
+        - name: vault
+          image: hashicorp/vault:1.12.1
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - vault server -config /vault/config/config.hcl -log-level=debug
+          ports:
+            - containerPort: 8200
+              protocol: TCP
+          env:
+            - name: VAULT_ADDR
+              value: http://0.0.0.0:8200
+          securityContext:
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            # capabilities:
+            #   drop:
+            #     - ALL
+            #   add:
+            #     - IPC_LOCK
+            #     - SETFCAP
+          volumeMounts:
+            - mountPath: /vault
+              name: vault
+              readOnly: false
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-ec", "vault version"]
+          # livenessProbe:
+          #   httpGet:
+          #     path: /v1/sys/health?standbyok=true
+          #     port: 8200
+          #     scheme: HTTPS
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          startupProbe:
+            exec:
+              command: ["/bin/sh", "-ec", "vault version"]
+          resources:
+            limits:
+              cpu: 50m
+              memory: 100Mi
+            requests:
+              cpu: 25m
+              memory: 10Mi
+...

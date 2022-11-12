@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  minio:
+    image: minio/minio
+    ports:
+      - 9000:9000
+      - 9090:9090
+    volumes:
+      - minio:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9090"
+  mc:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: /bin/bash
+    command: "mc config host add minio http://minio:9000 minioadmin minioadmin && mc ls minio"
+    # command: "ls"
+
+volumes:
+  minio: {}
